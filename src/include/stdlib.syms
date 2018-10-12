@@ -1,0 +1,8 @@
+exec
+getchar
+getpid
+getppid
+kputs
+putchar
+puts
+wait

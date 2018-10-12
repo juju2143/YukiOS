@@ -1,0 +1,10 @@
+body
+{
+    background: black;
+}
+#terminal {
+    background: black;
+    color: white;
+    font-family: Courier, monospace;
+    display: inline-block;
+}
