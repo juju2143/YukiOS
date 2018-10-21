@@ -4,6 +4,8 @@ var pid = 0;
 var ppid = 0;
 var pidsab;
 var pidbuf;
+var getcsab;
+var getcbuf;
 
 function getstr(ptr){
     if(typeof ptr !== 'number') return ptr;
@@ -29,9 +31,10 @@ var kernel = {
         return newpid;
     },
     getchar: function(){
-        //if(getcbuf.length == 0) return 0;
-        //return getcbuf.shift();
-        return 0;
+        for(i=getcbuf.length-1;getcbuf[i]==0;i--);
+        var char = getcbuf[i];
+        getcbuf[i] = 0;
+        return char;
     },
     /*gets: function(ptr){
         if(getcbuf.length == 0) return 0;
@@ -48,7 +51,7 @@ var kernel = {
         console.log(str);
     },
     putchar: function(char){
-        postMessage(["write", String.fromCharCode(char)]);
+        postMessage(["write", String.fromCodePoint(char)]);
     },
     puts: function(ptr){
         var str = getstr(ptr);
@@ -60,7 +63,6 @@ var kernel = {
     }
 }
 
-
 var handlers = {
     start: function(path, argc, argv, env){
         console.log("Starting process "+path+" (PID "+env.pid+") by PID "+env.ppid+"...")
@@ -68,6 +70,8 @@ var handlers = {
         ppid = env.ppid;
         pidsab = env.processes;
         pidbuf = new Uint32Array(pidsab);
+        getcsab = env.getcsab;
+        getcbuf = new Uint32Array(getcsab);
         fetch(path)
             .then(res => res.arrayBuffer())
             .then(buf => WebAssembly.compile(buf))
@@ -80,6 +84,7 @@ var handlers = {
             })
             .catch(e => {
                 pidbuf[pid] = 255;
+                console.log("start: "+path+" ("+pid+") errored with code 255");
                 postMessage(["kill", pid, 255])
             });
     },

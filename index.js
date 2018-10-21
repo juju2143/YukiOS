@@ -12,21 +12,34 @@ var pid = 0;
 var lastret = 0;
 var pidsab = new SharedArrayBuffer(131072);
 var pidbuf = new Uint32Array(pidsab);
+var getcsab = new SharedArrayBuffer(131072);
+var getcbuf = new Uint32Array(getcsab);
 
 term._core.register(term.addDisposableListener('key', (key, ev) => {
-    getcbuf.push(ev.keyCode);
+    //getcbuf.push(ev.keyCode);
+    /*event = {};
+    for(var i in ev) {
+        //console.log(typeof ev[i]);
+        if(typeof ev[i]!=="function" && typeof ev[i]!=="object")
+            event[i] = ev[i];
+    }
+    for(var i in processes) {
+        processes[i].postMessage(["key", key]);
+    }*/
+    getcbuf.copyWithin(1,0);
+    getcbuf[0] = ev.keyCode;
 }));
 
 var handlers = {
     exec: function(path, argc, argv, ppid, newpid){
         var curpid = newpid;
-        processes[curpid] = new Worker("process.js");
+        processes[curpid] = new Worker("process.js", {name: path});
         processes[curpid].onmessage = (e) => {
             var data = e.data;
             var name = data.shift();
             handlers[name](...data);
         }
-        processes[curpid].postMessage(["start", path, argc, argv, { pid: curpid, ppid: ppid, processes: pidsab }]);
+        processes[curpid].postMessage(["start", path, argc, argv, { pid: curpid, ppid: ppid, processes: pidsab, getcsab: getcsab }]);
     },
     kill: function(pid, ret){
         processes[pid].terminate();
@@ -35,6 +48,7 @@ var handlers = {
     },
     write: function(str){
         term.write(str);
+        if(str.codePointAt(0)==127) term.write("\b");
     }
 }
 
